@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <audio class="au" src="/audio/275151__bird-man__gun-shot.wav"></audio>
+    <title>Document</title>
+  </head>
+
+  <body>
+    <img
+      src="Img/16_sunburn_spritesheet.png"
+      style="display:none"
+      alt=""
+      class="ob"
+    />
+    <canvas id="can2"></canvas>
+
+    <script src="./Img/Images.js"></script>
+    <script src="./BasicFunctions.js"></script>
+    <script src="./Level/Wall.js"></script>
+    <script src="./Level/LoadLevel.js"></script>
+    <script src="./Play/Ovladani.js"></script>
+    <script src="./Play/Player.js"></script>
+    <script src="./Play/PlayerAction.js"></script>
+    <script src="./Enem/Enemy.js"></script>
+    <script src="./Enem/enemyAction.js"></script>
+    <script src="./Ball.js"></script>
+    <script src="./Level/renderLevel.js"></script>
+    <script>
+      let walls = [];
+      let keyPressed = [];
+      let enemies = [];
+      let balls = [];
+      let scope = {
+        tf: undefined,
+        ind: undefined
+      };
+      let gameIsPlaying = true;
+
+      function death() {
+        for (let [index, en] of enemies.entries()) {
+          if (en.life <= 0) {
+            enemies.splice(index, 1);
+          }
+        }
+        if (player.life <= 0) {
+          gameIsPlaying = false;
+        }
+      }
+
+      function isInRange(i, w, h) {
+        if (i * w - h / 2 >= sceneW / 2 - h / 2) {
+          if (i * w - h / 2 <= sceneW / 2 + h / 2) {
+            return true;
+          }
+        }
+      }
+
+      const sceneW = 800;
+      const sceneH = 700;
+
+      let can2 = document.getElementById("can2");
+      let ctx2;
+
+      let angle = 0;
+
+      let player = new Player(100, 200);
+
+      setInterval(() => {
+        for (let en of enemies) {
+          if (en.visible) {
+            en.attack();
+          }
+        }
+      }, 3000);
+      window.onload = function() {
+        setup();
+      };
+      function setup() {
+        ctx2 = can2.getContext("2d");
+
+        can2.width = sceneW;
+        can2.height = sceneH;
+        ctx2.imageSmoothingEnabled = false;
+
+        loadLevel();
+
+        GameLoop();
+      }
+
+      function Draw() {
+        ctx2.fillStyle = "black";
+        ctx2.fillRect(0, 0, can2.width, can2.height);
+
+        const sceneOfWalls = player.returnSceneOfWalls(walls);
+        let sceneOfEnemies = player.returnVisibleObjects(enemies);
+        let sceneOfBalls = player.returnVisibleObjects(balls);
+
+        const w = sceneW / sceneOfWalls.length;
+        enemyAction();
+        renderWalls(sceneOfWalls, w);
+
+        for (let i = 0; i < sceneOfEnemies.length; i++) {
+          let sq = sceneOfEnemies[i].record;
+
+          const h = 500 * (80 / sq);
+
+          scope.tf = undefined;
+          scope.ind = undefined;
+          if (isInRange(sceneOfEnemies[i].rayE, w, h)) {
+            scope.tf = true;
+            scope.ind = sceneOfEnemies[i].order;
+          }
+        }
+        colisionWallBall();
+
+        renderLevel(sceneOfEnemies, enemies, w);
+        renderLevel(sceneOfBalls, balls, w);
+
+        playerAction();
+        for (let ball of balls) {
+          ball.move();
+        }
+      }
+
+      function GameLoop() {
+        Draw();
+        if (gameIsPlaying) {
+          requestAnimationFrame(GameLoop);
+        }
+      }
+    </script>
+  </body>
+</html>
